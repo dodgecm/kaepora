@@ -52,6 +52,7 @@ func (s *Server) setupRouter(baseDir string) *chi.Mux {
 		r.Get("/schedule", s.schedule)
 		r.Get("/stats/ratings.svg", s.statsRatings)
 		r.Get("/stats", s.stats)
+		r.Get("/dev", s.dev)
 		r.Get("/", s.index)
 
 		r.NotFound(s.notFound)
@@ -60,6 +61,10 @@ func (s *Server) setupRouter(baseDir string) *chi.Mux {
 	r.Get("/", s.redirectToLocale)
 
 	return r
+}
+
+func (s *Server) dev(w http.ResponseWriter, r *http.Request) {
+	s.response(w, r, http.StatusOK, "dev.html", nil)
 }
 
 type ctxKey int
