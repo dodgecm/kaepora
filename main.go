@@ -1,18 +1,23 @@
 package main
 
 import (
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"kaepora/internal/back"
 	"kaepora/internal/bot"
+	"kaepora/internal/generator/oot"
+	"kaepora/internal/generator/oot/settings"
 	"kaepora/internal/global"
 	"kaepora/internal/web"
 	"log"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"sync"
 	"syscall"
 
+	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -26,6 +31,11 @@ func main() {
 		return
 	case "help":
 		fmt.Fprint(os.Stdout, help())
+		return
+	case "settings":
+		if err := generateSettingsStats(); err != nil {
+			log.Fatal(err)
+		}
 		return
 	}
 
@@ -68,6 +78,7 @@ COMMANDS
     fixtures    create default data for quick testing during development
     help        display this help
     serve       start the Discord bot
+    settings    output settings randomizer stats
     version     display the current version
 
     rerank SHORTCODE  recompute all rankings in a league
@@ -103,6 +114,41 @@ func serve(b *back.Back) error {
 	log.Print("info: waiting for complete shutdown")
 	wg.Wait()
 	log.Print("info: shutdown complete")
+
+	return nil
+}
+
+func generateSettingsStats() error {
+	baseDir, err := oot.GetBaseDir()
+	if err != nil {
+		return err
+	}
+
+	s, err := settings.Load(filepath.Join(baseDir, settings.DefaultName))
+	if err != nil {
+		return err
+	}
+
+	max := 102400
+	count := map[string]map[string]int{} // name => value => count
+	for i := 0; i < max; i++ {
+		settings := s.Shuffle(uuid.New().String(), oot.SettingsCostBudget)
+
+		for name, value := range settings {
+			if _, ok := count[name]; !ok {
+				count[name] = map[string]int{}
+			}
+
+			count[name][fmt.Sprintf("%v", value)]++
+		}
+	}
+
+	stats := web.NamedPct2DFrom2DMap(count, max)
+	w := csv.NewWriter(os.Stdout)
+	for _, v := range stats {
+		_ = w.Write([]string{v.Name, v.Value, fmt.Sprintf("%.2f", v.Pct)})
+	}
+	w.Flush()
 
 	return nil
 }

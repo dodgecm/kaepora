@@ -123,7 +123,7 @@ func (s *Server) getSeedStats(shortcode string) (statsSeed, error) {
 		WOTH:      namedPctFromMap(wothLocations, seedTotal),
 		WOTHItems: namedPctFromMap(wothItems, seedTotal),
 		Locations: locationPctFromMap(locationsAcc, seedTotal),
-		Settings:  namedPct2DFrom2DMap(settings, seedTotal),
+		Settings:  NamedPct2DFrom2DMap(settings, seedTotal),
 	}, nil
 }
 
@@ -180,12 +180,12 @@ func namedPctFromMap(m map[string]int, totalInt int) (ret []namedPct) {
 	return ret
 }
 
-func namedPct2DFrom2DMap(m map[string]map[string]int, totalInt int) (ret []namedPct2D) {
+func NamedPct2DFrom2DMap(m map[string]map[string]int, totalInt int) (ret []NamedPct2D) {
 	total := float64(totalInt)
 
 	for name := range m {
 		for value, count := range m[name] {
-			ret = append(ret, namedPct2D{
+			ret = append(ret, NamedPct2D{
 				Name:  name,
 				Value: value,
 				Pct:   100.0 * (float64(count) / total),
@@ -201,7 +201,7 @@ func namedPct2DFrom2DMap(m map[string]map[string]int, totalInt int) (ret []named
 type statsSeed struct {
 	WOTH, WOTHItems, Barren []namedPct
 	Locations               []locationPct
-	Settings                []namedPct2D
+	Settings                []NamedPct2D
 }
 
 type namedPct struct {
@@ -209,7 +209,7 @@ type namedPct struct {
 	Pct  float64
 }
 
-type namedPct2D struct {
+type NamedPct2D struct {
 	Name  string
 	Value string
 	Pct   float64
@@ -233,10 +233,10 @@ func (a byPctDesc) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 
-type byPct2DDesc []namedPct2D
+type byPct2DDesc []NamedPct2D
 
 func (a byPct2DDesc) Len() int {
-	return len([]namedPct2D(a))
+	return len([]NamedPct2D(a))
 }
 
 func (a byPct2DDesc) Less(i, j int) bool {
